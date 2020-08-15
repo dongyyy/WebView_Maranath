@@ -1,17 +1,19 @@
 package kr.mbch.www
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.app.DownloadManager
+import android.content.*
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.util.Base64
 import android.view.KeyEvent
 import android.webkit.JsResult
+import android.webkit.MimeTypeMap
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.Toast
@@ -19,9 +21,8 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
+import java.util.*
 
-
-//TODO :
 
 class MainActivity : AppCompatActivity() {
     private lateinit var completeReceiver: BroadcastReceiver
@@ -84,6 +85,52 @@ class MainActivity : AppCompatActivity() {
             }
 
             addJavascriptInterface(WebAppInterface(this@MainActivity), "webViewCall")
+
+            //mp3 다운로드 구현
+            setDownloadListener { param1String1: String, param1String2: String, param1String3: String, param1String4: String, param1Long: Long ->
+                val intent = Intent("android.intent.action.VIEW")
+                intent.setDataAndType(Uri.parse(param1String1), param1String4)
+
+                try{
+                    var varParam1String1 = param1String1
+                    var varParam1String2 = param1String2
+                    var varParam1String3 = param1String3
+                    val mimeTypeMap = MimeTypeMap.getSingleton()
+                    val downloadManager = this@MainActivity.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                    val uri = Uri.parse(param1String1)
+                    varParam1String2 = uri.lastPathSegment.toString()
+                    var i = varParam1String3.toLowerCase().lastIndexOf("filename=")
+                    
+                    if ( i >= 0 ){
+                        varParam1String3 = varParam1String3.substring(i + 9);
+                        i = varParam1String3.lastIndexOf(";");
+                        varParam1String2 = varParam1String3;
+                        if (i > 0)
+                            varParam1String2 = varParam1String3.substring(0, i - 1);
+                    }
+
+                    varParam1String2 = String(Base64.decode(varParam1String2, 0))
+                    varParam1String3 = mimeTypeMap.getMimeTypeFromExtension(
+                        varParam1String2.substring(
+                            varParam1String2.lastIndexOf(".") + 1, varParam1String2.length
+                        ).toLowerCase()
+                    )!!
+
+                    val request = DownloadManager.Request(uri)
+                    request.setTitle(varParam1String2)
+                    request.setDescription(varParam1String1)
+                    request.setMimeType(varParam1String3)
+                    request.setDestinationInExternalPublicDir(
+                        Environment.DIRECTORY_DOWNLOADS,
+                        varParam1String2
+                    )
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                        .mkdirs()
+                    downloadManager.enqueue(request)
+                } catch (e : ActivityNotFoundException){
+                    this@MainActivity.startActivity(intent)
+                }
+            }
 
             webViewClient = MyWebViewClientImpl()
             setInitialScale(1) //이거 넣고 webView 가 폰 화면에 맞음
@@ -225,4 +272,6 @@ class MainActivity : AppCompatActivity() {
 
 //        return super.onKeyDown(keyCode, event)
     }
+
+
 }
