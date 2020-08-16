@@ -12,16 +12,14 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Base64
 import android.view.KeyEvent
-import android.webkit.JsResult
-import android.webkit.MimeTypeMap
-import android.webkit.WebChromeClient
-import android.webkit.WebView
+import android.view.View.GONE
+import android.view.View.VISIBLE
+import android.webkit.*
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -72,15 +70,6 @@ class MainActivity : AppCompatActivity() {
                     result: JsResult?
                 ): Boolean {
                     return super.onJsAlert(view, url, message, result)
-//                    AlertDialog.Builder(this@MainActivity)
-//                        .setTitle(context.getString(R.string.message))
-//                        .setMessage(message)
-//                        .setPositiveButton(context.getString(R.string.confirm)){ _,_-> result
-//
-//                        }
-//                        .setCancelable(false)
-//                        .create().show()
-//                    return true
                 }
             }
 
@@ -132,30 +121,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            webViewClient = MyWebViewClientImpl()
+            webViewClient = MyWebViewClientImpl(this@MainActivity)
+
             setInitialScale(1) //이거 넣고 webView 가 폰 화면에 맞음
-//            loadUrl("http://www.mbch.kr")
+
             loadUrl("http://" + getString(R.string.site_url))
         }
-
-
-        /* access modifiers changed from: private */
-//        public boolean isOnline() {
-//            try {
-//                ConnectivityManager conMan = (ConnectivityManager) getSystemService("connectivity");
-//                NetworkInfo.State wifi = conMan.getNetworkInfo(1).getState();
-//                if (wifi == NetworkInfo.State.CONNECTED || wifi == NetworkInfo.State.CONNECTING) {
-//                    return true;
-//                }
-//                NetworkInfo.State mobile = conMan.getNetworkInfo(0).getState();
-//                if (mobile == NetworkInfo.State.CONNECTED || mobile == NetworkInfo.State.CONNECTING) {
-//                    return true;
-//                }
-//                return false;
-//            } catch (NullPointerException e) {
-//                return false;
-//            }
-//        }
 
         imageView1.setOnClickListener {
             mainWebView.loadUrl("http://" + getString(R.string.site_url))
@@ -175,7 +146,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     @RequiresApi(Build.VERSION_CODES.M)
     private fun isNetworkConnected(): Boolean {
         val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -183,27 +153,6 @@ class MainActivity : AppCompatActivity() {
         val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
         return networkCapabilities != null &&
                 networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-    }
-
-
-
-    fun alertShow(msg: String, isCancelBtn: Boolean) {
-        val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
-        alertDialog.setTitle("알림")
-        alertDialog.setMessage(msg)
-        alertDialog.setPositiveButton(
-            "확인"
-        ) { dialog, _ ->
-            dialog.dismiss()
-            finish()
-        }
-        if (isCancelBtn) {
-            alertDialog.setNegativeButton(
-                "취소"
-            ) { dialog, _ ->
-                dialog.cancel() }
-        }
-        alertDialog.show()
     }
 
     override fun onPause() {
@@ -223,55 +172,39 @@ class MainActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if ((keyCode == KeyEvent.KEYCODE_BACK) && (this.mainWebView.canGoBack())) {
             val gUrl: String = mainWebView.url
+
             if (gUrl.indexOf("/main/main.html") > 0) {
                 alertShow("앱을 종료하시겠습니까?", true)
             }else{
                 mainWebView.goBack()
             }
+
+            if(bottomMenu.visibility == GONE)
+                bottomMenu.visibility = VISIBLE
+
         }else if (keyCode == KeyEvent.KEYCODE_BACK){
             alertShow("앱을 종료하시겠습니까?", true)
         }
 
         return false
-
-//        if (keyCode === 4 && this.webView.canGoBack()) {
-//            val gUrl: String = this.webView.getUrl()
-//            if (gUrl.indexOf("/main/main.html") > 0) {
-//                alertShow("앱을 종료하시겠습니까?", true)
-//            } else if (gUrl.indexOf("/main/sub.html?pageCode=10001") > 0) {
-//                this.webView.loadUrl("http://" + getString(R.string.site_url) + "/main/main.html")
-//            } else {
-//                val postPageArr =
-//                    arrayOf("process.php", "loginCheck.php", "logout.php")
-//                var isPost = false
-//                val webHistory: WebBackForwardList = this.webView.copyBackForwardList()
-//                val historyUrl =
-//                    webHistory.getItemAtIndex(webHistory.currentIndex - 1).url
-//                var i = 0
-//                while (true) {
-//                    if (i >= postPageArr.size) {
-//                        break
-//                    } else if (historyUrl.indexOf(postPageArr[i]) > 0) {
-//                        isPost = true
-//                        break
-//                    } else {
-//                        i++
-//                    }
-//                }
-//                if (isPost.toBoolean()) {
-//                    this.webView.goBackOrForward(-2)
-//                } else {
-//                    this.webView.goBack()
-//                }
-//            }
-//        } else if (keyCode === 4) {
-//            alertShow("앱을 종료하시겠습니까?", true)
-//        }
-//        return false
-
-
-//        return super.onKeyDown(keyCode, event)
     }
 
-
+    fun alertShow(msg: String, isCancelBtn: Boolean) {
+        val alertDialog: AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
+        alertDialog.setTitle("알림")
+        alertDialog.setMessage(msg)
+        alertDialog.setPositiveButton(
+            "확인"
+        ) { dialog, _ ->
+            dialog.dismiss()
+            finish()
+        }
+        if (isCancelBtn) {
+            alertDialog.setNegativeButton(
+                "취소"
+            ) { dialog, _ ->
+                dialog.cancel() }
+        }
+        alertDialog.show()
+    }
 }
